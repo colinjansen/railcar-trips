@@ -1,0 +1,13 @@
+<Project>
+  <Target Name="GenerateCoverageReport" AfterTargets="VSTest" Condition="'$(IsTestProject)' == 'true'">
+    <PropertyGroup>
+      <CoverageInput>$(MSBuildProjectDirectory)/TestResults/coverage.cobertura.xml</CoverageInput>
+      <CoverageReportDir>$(MSBuildProjectDirectory)/TestResults/coverage-report</CoverageReportDir>
+    </PropertyGroup>
+
+    <Message Importance="high" Text="Coverage input: $(CoverageInput)" />
+
+    <Exec Condition="Exists('$(CoverageInput)')" Command="dotnet tool run reportgenerator -reports:$(CoverageInput) -targetdir:$(CoverageReportDir) -reporttypes:Html" />
+    <Message Condition="!Exists('$(CoverageInput)')" Importance="high" Text="Coverage input not found. Run 'dotnet test' and ensure coverage is enabled." />
+  </Target>
+</Project>

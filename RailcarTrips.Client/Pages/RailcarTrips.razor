@@ -1,0 +1,157 @@
+@page "/railcar-trips"
+@using System.Net.Http.Headers
+@using System.Net.Http.Json
+@inject HttpClient Http
+
+<h1>Railcar Trips</h1>
+
+<p>Upload an equipment events CSV file to process trips.</p>
+
+<InputFile OnChange="OnFileSelected" />
+<button class="btn btn-primary" @onclick="ProcessFile" disabled="@(_selectedFile is null || _isProcessing)">Process</button>
+
+@if (!string.IsNullOrWhiteSpace(_statusMessage))
+{
+    <div class="alert alert-info mt-3">@_statusMessage</div>
+}
+
+@if (_processResult is not null)
+{
+    <div class="mt-3">
+        <strong>Processed:</strong> @_processResult.ParsedEvents
+        <strong>Stored:</strong> @_processResult.StoredEvents
+        <strong>Trips:</strong> @_processResult.TripsCreated
+        <strong>Warnings:</strong> @_processResult.WarningCount
+        <strong>Errors:</strong> @_processResult.ErrorCount
+    </div>
+}
+
+@if (_trips.Count > 0)
+{
+    <table class="table table-striped mt-4">
+        <thead>
+            <tr>
+                <th>Equipment Id</th>
+                <th>Origin</th>
+                <th>Destination</th>
+                <th>Start (UTC)</th>
+                <th>End (UTC)</th>
+                <th>Total Hours</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var trip in _trips)
+        {
+            <tr class="@(trip.Id == _selectedTripId ? "table-primary" : string.Empty)" @onclick="() => SelectTrip(trip.Id)">
+                <td>@trip.EquipmentId</td>
+                <td>@trip.OriginCity</td>
+                <td>@trip.DestinationCity</td>
+                <td>@trip.StartUtc.ToString("u")</td>
+                <td>@trip.EndUtc.ToString("u")</td>
+                <td>@trip.TotalTripHours.ToString("0.##")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+@if (_selectedTripEvents.Count > 0)
+{
+    <h3>Trip Events</h3>
+    <table class="table table-sm table-bordered">
+        <thead>
+            <tr>
+                <th>Event Code</th>
+                <th>City</th>
+                <th>Local Time</th>
+                <th>UTC Time</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var evt in _selectedTripEvents)
+        {
+            <tr>
+                <td>@evt.EventCode</td>
+                <td>@evt.City</td>
+                <td>@evt.EventLocalTime.ToString("yyyy-MM-dd HH:mm")</td>
+                <td>@evt.EventUtcTime.ToString("u")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+@code {
+    private IBrowserFile? _selectedFile;
+    private bool _isProcessing;
+    private string? _statusMessage;
+    private ProcessResultDto? _processResult;
+    private List<TripDto> _trips = new();
+    private int? _selectedTripId;
+    private List<TripEventDto> _selectedTripEvents = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTripsAsync();
+    }
+
+    private void OnFileSelected(InputFileChangeEventArgs args)
+    {
+        _selectedFile = args.File;
+        _statusMessage = null;
+    }
+
+    private async Task ProcessFile()
+    {
+        if (_selectedFile is null)
+        {
+            return;
+        }
+
+        _isProcessing = true;
+        _statusMessage = "Processing...";
+        _processResult = null;
+        _selectedTripEvents.Clear();
+        _selectedTripId = null;
+
+        try
+        {
+            using var content = new MultipartFormDataContent();
+            var fileContent = new StreamContent(_selectedFile.OpenReadStream(maxAllowedSize: 10_000_000));
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(_selectedFile.ContentType);
+            content.Add(fileContent, "file", _selectedFile.Name);
+
+            var response = await Http.PostAsync("api/railcartrips/process", content);
+            if (!response.IsSuccessStatusCode)
+            {
+                _statusMessage = $"Processing failed: {response.ReasonPhrase}";
+                return;
+            }
+
+            _processResult = await response.Content.ReadFromJsonAsync<ProcessResultDto>();
+            _statusMessage = "Processing complete.";
+            await LoadTripsAsync();
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"Processing failed: {ex.Message}";
+        }
+        finally
+        {
+            _isProcessing = false;
+        }
+    }
+
+    private async Task LoadTripsAsync()
+    {
+        var trips = await Http.GetFromJsonAsync<List<TripDto>>("api/railcartrips");
+        _trips = trips ?? new List<TripDto>();
+    }
+
+    private async Task SelectTrip(int tripId)
+    {
+        _selectedTripId = tripId;
+        var events = await Http.GetFromJsonAsync<List<TripEventDto>>($"api/railcartrips/{tripId}/events");
+        _selectedTripEvents = events ?? new List<TripEventDto>();
+    }
+}

@@ -1,0 +1,47 @@
+# .NET
+bin/
+obj/
+[Bb]in/
+[Oo]bj/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+
+# Build artifacts
+artifacts/
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+
+# SQLite
+*.db
+*.db-shm
+*.db-wal
+
+# Blazor WASM
+wwwroot/_framework/
+wwwroot/service-worker-assets.js
+
+# Test results
+TestResults/
+
+# Code Reviews
+Code Reviews/

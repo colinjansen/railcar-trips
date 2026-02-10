@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RailcarTrips.Client\RailcarTrips.Client.csproj" />
+    <ProjectReference Include="..\RailcarTrips.Application\RailcarTrips.Application.csproj" />
+    <ProjectReference Include="..\RailcarTrips.Infrastructure\RailcarTrips.Infrastructure.csproj" />
+    <ProjectReference Include="..\RailcarTrips.Shared\RailcarTrips.Shared.csproj" />
+  </ItemGroup>
+
+
+</Project>

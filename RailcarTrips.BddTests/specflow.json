@@ -1,0 +1,14 @@
+{
+  "bindingCulture": {
+    "name": "en-us"
+  },
+  "language": {
+    "feature": "en-us"
+  },
+  "stepAssemblies": [],
+  "trace": {
+    "traceSuccessfulSteps": false,
+    "traceTimings": true,
+    "minTracedDuration": "0:0:0.1"
+  }
+}
