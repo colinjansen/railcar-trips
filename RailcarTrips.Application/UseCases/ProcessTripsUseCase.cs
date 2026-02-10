@@ -1,4 +1,3 @@
-using System.Globalization;
 using Microsoft.Extensions.Logging;
 using RailcarTrips.Application.Abstractions;
 using RailcarTrips.Domain.Models;
@@ -27,7 +26,13 @@ public sealed class ProcessTripsUseCase(
     public async Task<ProcessResultDto> Execute(Stream csvStream, CancellationToken cancellationToken = default)
     {
         var result = new ProcessResultDto();
-        var rows = await ReadRows(csvStream, result, cancellationToken);
+        var csvReadResult = await _csvReader.ReadRows(
+            stream: csvStream,
+            skipHeaderRow: true,
+            leaveStreamOpen: true,
+            cancellationToken: cancellationToken);
+        LogAndCountIssues(csvReadResult.Issues, result);
+        var rows = csvReadResult.Rows;
         result.ParsedEvents = rows.Count;
 
         if (rows.Count == 0)
@@ -58,7 +63,7 @@ public sealed class ProcessTripsUseCase(
             await _store.AddEquipmentEventsAsync(eventSelection.Events, cancellationToken);
         }
 
-        var eventsForTrips = await LoadEventsForTrips(equipmentIds, cancellationToken);
+        var eventsForTrips = await _store.GetEventsForEquipmentAsync(equipmentIds, cancellationToken);
         var existingTripKeys = await _store.GetExistingTripKeysAsync(equipmentIds, cancellationToken);
         var tripSelection = TripProcessingRules.SelectTripsToPersist(eventsForTrips, existingTripKeys);
         LogAndCountWarnings(tripSelection.Warnings, result);
@@ -73,25 +78,6 @@ public sealed class ProcessTripsUseCase(
             result.ParsedEvents, result.StoredEvents, result.TripsCreated);
 
         return result;
-    }
-
-    /// <summary>
-    /// Loads all events for the given equipment IDs from the database. This is necessary to ensure that we have a complete set 
-    /// of events for building trips, including any existing events that were not part of the current CSV upload.
-    /// </summary>
-    /// <param name="equipmentIds">The set of equipment IDs for which to load events.</param>
-    /// <param name="cancellationToken"><see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
-    /// <returns>A list of <see cref="EquipmentEvent"/> objects for the specified equipment IDs.</returns>
-    private async Task<List<EquipmentEvent>> LoadEventsForTrips(HashSet<string> equipmentIds, CancellationToken cancellationToken)
-    {
-        var eventsForTrips = new List<EquipmentEvent>();
-        foreach (var equipmentId in equipmentIds)
-        {
-            var equipmentEvents = await _store.GetEventsForEquipmentAsync(equipmentId, cancellationToken);
-            eventsForTrips.AddRange(equipmentEvents);
-        }
-
-        return eventsForTrips;
     }
 
     /// <summary>
@@ -140,52 +126,4 @@ public sealed class ProcessTripsUseCase(
         }
     }
 
-    /// <summary>
-    /// Reads and parses the CSV rows from the provided stream. Validates the format and logs any issues encountered.
-    /// </summary>
-    /// <param name="csvStream"><see cref="Stream"/> containing the CSV data.</param>
-    /// <param name="result"><see cref="ProcessResultDto"/> to accumulate processing results.</param>
-    /// <param name="cancellationToken"><see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
-    /// <returns>A list of parsed CSV event rows.</returns>
-    private async Task<List<ImportedEventRow>> ReadRows(Stream csvStream, ProcessResultDto result, CancellationToken cancellationToken)
-    {
-        var rows = new List<ImportedEventRow>();
-        var csvRows = await _csvReader.ReadRows(stream: csvStream, skipHeaderRow: true, leaveStreamOpen: true, cancellationToken);
-
-        foreach (string[] parts in csvRows)
-        {
-            var line = string.Join(',', parts);
-
-            if (parts.Length < 4)
-            {
-                _logger.LogWarning("Skipping invalid row: {Row}", line);
-                result.WarningCount++;
-                continue;
-            }
-
-            if (!DateTime.TryParseExact(parts[2], "yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var localTime))
-            {
-                _logger.LogWarning("Skipping row with invalid date: {Row}", line);
-                result.WarningCount++;
-                continue;
-            }
-
-            if (!int.TryParse(parts[3], out var cityId))
-            {
-                _logger.LogWarning("Skipping row with invalid city id: {Row}", line);
-                result.WarningCount++;
-                continue;
-            }
-
-            rows.Add(new ImportedEventRow(
-                parts[0],
-                parts[1],
-                localTime,
-                cityId,
-                line,
-                0));
-        }
-
-        return rows;
-    }
 }

@@ -16,10 +16,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             .HasIndex(c => c.Name);
 
         modelBuilder.Entity<EquipmentEvent>()
-            .HasIndex(e => new { e.EquipmentId, e.EventUtcTime, e.EventCode, e.CityId });
+            .HasIndex(e => new { e.EquipmentId, e.EventUtcTime, e.EventCode, e.CityId })
+            .IsUnique();
 
         modelBuilder.Entity<Trip>()
-            .HasIndex(t => new { t.EquipmentId, t.StartUtc, t.EndUtc });
+            .HasIndex(t => new { t.EquipmentId, t.StartUtc, t.EndUtc })
+            .IsUnique();
 
         modelBuilder.Entity<TripEvent>()
             .HasIndex(te => new { te.TripId, te.Sequence });

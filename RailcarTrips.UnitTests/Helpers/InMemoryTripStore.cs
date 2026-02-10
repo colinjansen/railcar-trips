@@ -28,11 +28,12 @@ public sealed class InMemoryTripStore : ITripProcessingStore
         return Task.CompletedTask;
     }
 
-    public Task<List<EquipmentEvent>> GetEventsForEquipmentAsync(string equipmentId, CancellationToken cancellationToken)
+    public Task<List<EquipmentEvent>> GetEventsForEquipmentAsync(IReadOnlyCollection<string> equipmentIds, CancellationToken cancellationToken)
     {
         var events = EquipmentEvents
-            .Where(e => e.EquipmentId == equipmentId)
-            .OrderBy(e => e.EventUtcTime)
+            .Where(e => equipmentIds.Contains(e.EquipmentId))
+            .OrderBy(e => e.EquipmentId)
+            .ThenBy(e => e.EventUtcTime)
             .ToList();
         return Task.FromResult(events);
     }

@@ -29,11 +29,12 @@ public sealed class TripProcessingStore(AppDbContext dbContext) : ITripProcessin
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public Task<List<EquipmentEvent>> GetEventsForEquipmentAsync(string equipmentId, CancellationToken cancellationToken) =>
+    public Task<List<EquipmentEvent>> GetEventsForEquipmentAsync(IReadOnlyCollection<string> equipmentIds, CancellationToken cancellationToken) =>
         _dbContext.EquipmentEvents
             .AsNoTracking()
-            .Where(e => e.EquipmentId == equipmentId)
-            .OrderBy(e => e.EventUtcTime)
+            .Where(e => equipmentIds.Contains(e.EquipmentId))
+            .OrderBy(e => e.EquipmentId)
+            .ThenBy(e => e.EventUtcTime)
             .ToListAsync(cancellationToken);
 
     public async Task<HashSet<TripKey>> GetExistingTripKeysAsync(HashSet<string> equipmentIds, CancellationToken cancellationToken)

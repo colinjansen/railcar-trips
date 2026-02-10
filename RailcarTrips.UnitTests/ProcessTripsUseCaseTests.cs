@@ -2,6 +2,7 @@ using System.Text;
 using Microsoft.Extensions.Logging.Abstractions;
 using RailcarTrips.Application.UseCases;
 using RailcarTrips.Domain.Models;
+using RailcarTrips.Infrastructure.Services;
 using RailcarTrips.UnitTests.Helpers;
 
 namespace RailcarTrips.UnitTests;
@@ -72,7 +73,7 @@ public sealed class ProcessTripsUseCaseTests
         var result = await useCase.Execute(stream);
 
         Assert.Equal(1, result.ParsedEvents);
-        //Assert.Equal(4, result.WarningCount);
+        Assert.Equal(4, result.WarningCount);
         Assert.Equal(1, result.StoredEvents);
     }
 

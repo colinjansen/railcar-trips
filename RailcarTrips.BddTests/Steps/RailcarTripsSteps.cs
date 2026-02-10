@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.Extensions.Logging.Abstractions;
 using RailcarTrips.Application.UseCases;
 using RailcarTrips.Domain.Models;
+using RailcarTrips.Infrastructure.Services;
 using RailcarTrips.Shared.Dtos;
 using TechTalk.SpecFlow;
 using Xunit;

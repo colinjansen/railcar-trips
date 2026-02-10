@@ -18,7 +18,7 @@ public sealed class InMemoryTripStore : ITripProcessingStore, ITripReadStore
     {
         var keys = EquipmentEvents
             .Where(e => equipmentIds.Contains(e.EquipmentId))
-            .Select(e => new EventKey(e.EquipmentId, e.EventUtcTime, e.EventCode, e.CityId))
+            .Select(e => e.ToKey())
             .ToList();
         return Task.FromResult(new HashSet<EventKey>(keys));
     }
@@ -29,11 +29,12 @@ public sealed class InMemoryTripStore : ITripProcessingStore, ITripReadStore
         return Task.CompletedTask;
     }
 
-    public Task<List<EquipmentEvent>> GetEventsForEquipmentAsync(string equipmentId, CancellationToken cancellationToken)
+    public Task<List<EquipmentEvent>> GetEventsForEquipmentAsync(IReadOnlyCollection<string> equipmentIds, CancellationToken cancellationToken)
     {
         var events = EquipmentEvents
-            .Where(e => e.EquipmentId == equipmentId)
-            .OrderBy(e => e.EventUtcTime)
+            .Where(e => equipmentIds.Contains(e.EquipmentId))
+            .OrderBy(e => e.EquipmentId)
+            .ThenBy(e => e.EventUtcTime)
             .ToList();
         return Task.FromResult(events);
     }
@@ -42,7 +43,7 @@ public sealed class InMemoryTripStore : ITripProcessingStore, ITripReadStore
     {
         var keys = Trips
             .Where(t => equipmentIds.Contains(t.EquipmentId))
-            .Select(t => new TripKey(t.EquipmentId, t.StartUtc, t.EndUtc))
+            .Select(t => t.ToKey())
             .ToList();
         return Task.FromResult(new HashSet<TripKey>(keys));
     }
