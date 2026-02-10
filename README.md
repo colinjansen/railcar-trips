@@ -71,3 +71,22 @@ BDD tests (`RailcarTrips.BddTests`):
 - Total method coverage: `66.93%`
 
 These values are per test project run and are not a merged combined report.
+
+## Questions
+
+- Are there style guidelines to follow?
+- Are there existing component libraries that could be leveraged?
+- Will this application integrate with other applications, or will it be standalone?
+
+## Assumptions
+
+- .NET 10 is acceptable as the primary application platform.
+- Using DDD-style layering to separate domain logic is appropriate for this solution.
+- Authentication is not required for the current scope of this app.
+- Equipment events CSV parsing does not need to be fully robust yet.
+
+## Future Considerations
+
+- Security hardening: authentication, authorization, CORS, and related controls.
+- Increased and more comprehensive automated test coverage.
+- More robust and defensive input parsing/validation.
