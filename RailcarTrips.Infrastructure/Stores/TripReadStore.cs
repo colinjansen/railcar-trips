@@ -9,7 +9,7 @@ public sealed class TripReadStore(AppDbContext dbContext) : ITripReadStore
 {
     private readonly AppDbContext _dbContext = dbContext;
 
-    public async Task<List<TripDto>> GetTripsAsync(CancellationToken cancellationToken)
+    public async Task<List<TripDto>> GetTrips(CancellationToken cancellationToken)
     {
         return await _dbContext.Trips
             .AsNoTracking()
@@ -29,7 +29,7 @@ public sealed class TripReadStore(AppDbContext dbContext) : ITripReadStore
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<List<TripEventDto>> GetTripEventsAsync(int tripId, CancellationToken cancellationToken)
+    public async Task<List<TripEventDto>> GetTripEvents(int tripId, CancellationToken cancellationToken)
     {
         return await _dbContext.TripEvents
             .AsNoTracking()

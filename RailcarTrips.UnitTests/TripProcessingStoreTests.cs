@@ -37,7 +37,7 @@ public sealed class TripProcessingStoreTests
 
         await using var dbContext = new AppDbContext(options);
         var store = new TripProcessingStore(dbContext);
-        var result = await store.AddEquipmentEventsAsync(
+        var result = await store.AddEquipmentEvents(
             new[]
             {
                 new EquipmentEvent
@@ -95,7 +95,7 @@ public sealed class TripProcessingStoreTests
 
         await using var dbContext = new AppDbContext(options);
         var store = new TripProcessingStore(dbContext);
-        var result = await store.AddTripsAsync(
+        var result = await store.AddTrips(
             new[]
             {
                 new Trip

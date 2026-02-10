@@ -13,7 +13,7 @@ public sealed class TripQueryService(ITripReadStore store)
     /// <param name="cancellationToken"> The cancellation token.</param>
     /// <returns> A list of trips.</returns>
     public Task<List<TripDto>> GetTrips(CancellationToken cancellationToken) =>
-        _store.GetTripsAsync(cancellationToken);
+        _store.GetTrips(cancellationToken);
 
     /// <summary>
     /// Gets all events for a trip.
@@ -22,5 +22,5 @@ public sealed class TripQueryService(ITripReadStore store)
     /// <param name="cancellationToken"> The cancellation token.</param>
     /// <returns> A list of trip events for the specified trip.</returns>
     public Task<List<TripEventDto>> GetTripEvents(int tripId, CancellationToken cancellationToken) =>
-        _store.GetTripEventsAsync(tripId, cancellationToken);
+        _store.GetTripEvents(tripId, cancellationToken);
 }

@@ -1,0 +1,45 @@
+@if (Trips.Count > 0)
+{
+    <table class="table table-striped mt-4">
+        <thead>
+            <tr>
+                <th>Equipment Id</th>
+                <th>Origin</th>
+                <th>Destination</th>
+                <th>Start (UTC)</th>
+                <th>End (UTC)</th>
+                <th>Total Hours</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var trip in Trips)
+        {
+            <tr class="@(trip.Id == SelectedTripId ? "table-primary" : string.Empty)"
+                @onclick="() => OnTripSelected(trip.Id)">
+                <td>@trip.EquipmentId</td>
+                <td>@trip.OriginCity</td>
+                <td>@trip.DestinationCity</td>
+                <td>@trip.StartUtc.ToString("u")</td>
+                <td>@trip.EndUtc.ToString("u")</td>
+                <td>@trip.TotalTripHours.ToString("0.##")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+@code {
+    [Parameter]
+    public IReadOnlyList<TripDto> Trips { get; set; } = [];
+
+    [Parameter]
+    public int? SelectedTripId { get; set; }
+
+    [Parameter]
+    public EventCallback<int> TripSelected { get; set; }
+
+    private Task OnTripSelected(int tripId)
+    {
+        return TripSelected.InvokeAsync(tripId);
+    }
+}

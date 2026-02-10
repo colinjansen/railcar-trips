@@ -23,7 +23,7 @@ public sealed class Trip
     public DateTime EndUtc { get; set; }
     public double TotalTripHours { get; set; }
 
-    public List<TripEvent> TripEvents { get; set; } = new();
+    public List<TripEvent> TripEvents { get; set; } = [];
 
     public TripEvent AddTripEvent(EquipmentEvent equipmentEvent, int sequence)
     {
@@ -130,10 +130,3 @@ public sealed class Trip
         return new TripBuildResult(trips, tripEvents, warnings);
     }
 }
-
-public sealed record TripBuildResult(
-    IReadOnlyList<Trip> Trips,
-    IReadOnlyList<TripEvent> TripEvents,
-    IReadOnlyList<TripBuildWarning> Warnings);
-
-public sealed record TripBuildWarning(string Code, string Message, string EquipmentId, DateTime? EventUtc);

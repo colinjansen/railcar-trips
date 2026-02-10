@@ -1,4 +1,4 @@
-@page "/railcar-trips"
+@page "/"
 @using System.Net.Http.Headers
 @using System.Net.Http.Json
 @inject HttpClient Http
@@ -7,79 +7,19 @@
 
 <p>Upload an equipment events CSV file to process trips.</p>
 
-<InputFile OnChange="OnFileSelected" />
-<button class="btn btn-primary" @onclick="ProcessFile" disabled="@(_selectedFile is null || _isProcessing)">Process</button>
+<RailcarTripsFileUpload FileSelected="OnFileSelected"
+                        ProcessRequested="ProcessFile"
+                        CanProcess="@(_selectedFile is not null)"
+                        IsProcessing="@_isProcessing" />
 
 @if (!string.IsNullOrWhiteSpace(_statusMessage))
 {
     <div class="alert alert-info mt-3">@_statusMessage</div>
 }
 
-@if (_processResult is not null)
-{
-    <div class="mt-3">
-        <strong>Processed:</strong> @_processResult.ParsedEvents
-        <strong>Stored:</strong> @_processResult.StoredEvents
-        <strong>Trips:</strong> @_processResult.TripsCreated
-        <strong>Warnings:</strong> @_processResult.WarningCount
-        <strong>Errors:</strong> @_processResult.ErrorCount
-    </div>
-}
-
-@if (_trips.Count > 0)
-{
-    <table class="table table-striped mt-4">
-        <thead>
-            <tr>
-                <th>Equipment Id</th>
-                <th>Origin</th>
-                <th>Destination</th>
-                <th>Start (UTC)</th>
-                <th>End (UTC)</th>
-                <th>Total Hours</th>
-            </tr>
-        </thead>
-        <tbody>
-        @foreach (var trip in _trips)
-        {
-            <tr class="@(trip.Id == _selectedTripId ? "table-primary" : string.Empty)" @onclick="() => SelectTrip(trip.Id)">
-                <td>@trip.EquipmentId</td>
-                <td>@trip.OriginCity</td>
-                <td>@trip.DestinationCity</td>
-                <td>@trip.StartUtc.ToString("u")</td>
-                <td>@trip.EndUtc.ToString("u")</td>
-                <td>@trip.TotalTripHours.ToString("0.##")</td>
-            </tr>
-        }
-        </tbody>
-    </table>
-}
-
-@if (_selectedTripEvents.Count > 0)
-{
-    <h3>Trip Events</h3>
-    <table class="table table-sm table-bordered">
-        <thead>
-            <tr>
-                <th>Event Code</th>
-                <th>City</th>
-                <th>Local Time</th>
-                <th>UTC Time</th>
-            </tr>
-        </thead>
-        <tbody>
-        @foreach (var evt in _selectedTripEvents)
-        {
-            <tr>
-                <td>@evt.EventCode</td>
-                <td>@evt.City</td>
-                <td>@evt.EventLocalTime.ToString("yyyy-MM-dd HH:mm")</td>
-                <td>@evt.EventUtcTime.ToString("u")</td>
-            </tr>
-        }
-        </tbody>
-    </table>
-}
+<ProcessResultSummary Result="@_processResult" />
+<TripsTable Trips="@_trips" SelectedTripId="@_selectedTripId" TripSelected="SelectTrip" />
+<TripEventsTable TripEvents="@_selectedTripEvents" />
 
 @code {
     private IBrowserFile? _selectedFile;

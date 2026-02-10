@@ -1,0 +1,58 @@
+@if (Result is not null)
+{
+    <div class="mt-3">
+        <strong>Processed:</strong> @Result.ParsedEvents
+        <strong>Stored:</strong> @Result.StoredEvents
+        <strong>Trips:</strong> @Result.TripsCreated
+        <strong>Warnings:</strong> @Result.WarningCount
+        <strong>Errors:</strong> @Result.ErrorCount
+    </div>
+
+    @if (Result.WarningCount > 0)
+    {
+        <div class="mt-2">
+            <button class="btn btn-sm btn-outline-secondary" @onclick="ToggleWarnings">
+                @(ShowWarnings ? "Hide warnings" : $"Show warnings ({Result.WarningCount})")
+            </button>
+        </div>
+
+        @if (ShowWarnings)
+        {
+            <ul class="list-group mt-2">
+                @if (Result.Warnings.Count == 0)
+                {
+                    <li class="list-group-item">Warnings are not available in this response.</li>
+                }
+                else
+                {
+                    @foreach (var warning in Result.Warnings)
+                    {
+                        <li class="list-group-item">@warning</li>
+                    }
+                }
+            </ul>
+        }
+    }
+}
+
+@code {
+    [Parameter]
+    public ProcessResultDto? Result { get; set; }
+
+    private bool ShowWarnings;
+    private ProcessResultDto? _previousResult;
+
+    protected override void OnParametersSet()
+    {
+        if (!ReferenceEquals(_previousResult, Result))
+        {
+            ShowWarnings = false;
+            _previousResult = Result;
+        }
+    }
+
+    private void ToggleWarnings()
+    {
+        ShowWarnings = !ShowWarnings;
+    }
+}

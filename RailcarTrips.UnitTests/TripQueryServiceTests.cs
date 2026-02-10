@@ -11,11 +11,11 @@ public sealed class TripQueryServiceTests
     {
         var store = new FakeTripReadStore
         {
-            Trips = new List<TripDto>
-            {
+            Trips =
+            [
                 new() { Id = 1, EquipmentId = "CAR1" },
                 new() { Id = 2, EquipmentId = "CAR2" }
-            }
+            ]
         };
 
         var service = new TripQueryService(store);
@@ -31,10 +31,10 @@ public sealed class TripQueryServiceTests
     {
         var store = new FakeTripReadStore
         {
-            TripEvents = new List<TripEventDto>
-            {
+            TripEvents =
+            [
                 new() { Id = 10, EquipmentId = "CAR1", EventCode = "W" }
-            }
+            ]
         };
 
         var service = new TripQueryService(store);
@@ -47,13 +47,13 @@ public sealed class TripQueryServiceTests
 
     private sealed class FakeTripReadStore : ITripReadStore
     {
-        public List<TripDto> Trips { get; set; } = new();
-        public List<TripEventDto> TripEvents { get; set; } = new();
+        public List<TripDto> Trips { get; set; } = [];
+        public List<TripEventDto> TripEvents { get; set; } = [];
 
-        public Task<List<TripDto>> GetTripsAsync(CancellationToken cancellationToken) =>
+        public Task<List<TripDto>> GetTrips(CancellationToken cancellationToken) =>
             Task.FromResult(Trips);
 
-        public Task<List<TripEventDto>> GetTripEventsAsync(int tripId, CancellationToken cancellationToken) =>
+        public Task<List<TripEventDto>> GetTripEvents(int tripId, CancellationToken cancellationToken) =>
             Task.FromResult(TripEvents);
     }
 }

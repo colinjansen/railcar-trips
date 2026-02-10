@@ -41,7 +41,7 @@ public sealed class ProcessTripsUseCase(
             return result;
         }
 
-        var cityLookup = await _store.GetCityLookupAsync(cancellationToken);
+        var cityLookup = await _store.GetCityLookup(cancellationToken);
         var buildEventsResult = TripProcessingRules.BuildEvents(rows, cityLookup, _eventTimeConverter);
         LogAndCountIssues(buildEventsResult.Issues, result);
         var eventsToInsert = buildEventsResult.Events;
@@ -53,25 +53,25 @@ public sealed class ProcessTripsUseCase(
             return result;
         }
 
-        var existingEventKeys = await _store.GetExistingEventKeysAsync(equipmentIds, cancellationToken);
+        var existingEventKeys = await _store.GetExistingEventKeys(equipmentIds, cancellationToken);
         var eventSelection = TripProcessingRules.SelectEventsToPersist(eventsToInsert, existingEventKeys);
         LogAndCountWarnings(eventSelection.Warnings, result);
 
         if (eventSelection.Events.Count > 0)
         {
-            var writeResult = await _store.AddEquipmentEventsAsync(eventSelection.Events, cancellationToken);
+            var writeResult = await _store.AddEquipmentEvents(eventSelection.Events, cancellationToken);
             result.StoredEvents += writeResult.PersistedCount;
             LogAndCountWarnings(writeResult.Warnings, result);
         }
 
-        var eventsForTrips = await _store.GetEventsForEquipmentAsync(equipmentIds, cancellationToken);
-        var existingTripKeys = await _store.GetExistingTripKeysAsync(equipmentIds, cancellationToken);
+        var eventsForTrips = await _store.GetEventsForEquipment(equipmentIds, cancellationToken);
+        var existingTripKeys = await _store.GetExistingTripKeys(equipmentIds, cancellationToken);
         var tripSelection = TripProcessingRules.SelectTripsToPersist(eventsForTrips, existingTripKeys);
         LogAndCountWarnings(tripSelection.Warnings, result);
 
         if (tripSelection.Trips.Count > 0)
         {
-            var writeResult = await _store.AddTripsAsync(tripSelection.Trips, tripSelection.TripEvents, cancellationToken);
+            var writeResult = await _store.AddTrips(tripSelection.Trips, tripSelection.TripEvents, cancellationToken);
             result.TripsCreated = writeResult.PersistedCount;
             LogAndCountWarnings(writeResult.Warnings, result);
         }
@@ -102,6 +102,11 @@ public sealed class ProcessTripsUseCase(
             }
 
             result.WarningCount++;
+            result.Warnings.Add(FormatWarning(
+                code: warning.Code,
+                message: warning.Message,
+                equipmentId: warning.EquipmentId,
+                eventUtc: warning.EventUtc));
         }
     }
 
@@ -124,8 +129,35 @@ public sealed class ProcessTripsUseCase(
             {
                 _logger.LogWarning("{Code}: {Message}", issue.Code, issue.Message);
                 result.WarningCount++;
+                result.Warnings.Add(FormatWarning(
+                    code: issue.Code,
+                    message: issue.Message,
+                    equipmentId: null,
+                    eventUtc: null));
             }
         }
+    }
+
+    private static string FormatWarning(string code, string message, string? equipmentId, DateTime? eventUtc)
+    {
+        var details = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(equipmentId))
+        {
+            details.Add($"Equipment: {equipmentId}");
+        }
+
+        if (eventUtc.HasValue)
+        {
+            details.Add($"UTC: {eventUtc.Value:u}");
+        }
+
+        if (details.Count == 0)
+        {
+            return $"{code}: {message}";
+        }
+
+        return $"{code}: {message} ({string.Join(", ", details)})";
     }
 
 }

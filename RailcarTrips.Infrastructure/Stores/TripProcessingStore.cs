@@ -10,10 +10,10 @@ public sealed class TripProcessingStore(AppDbContext dbContext) : ITripProcessin
 {
     private readonly AppDbContext _dbContext = dbContext;
 
-    public Task<Dictionary<int, City>> GetCityLookupAsync(CancellationToken cancellationToken) =>
+    public Task<Dictionary<int, City>> GetCityLookup(CancellationToken cancellationToken) =>
         _dbContext.Cities.AsNoTracking().ToDictionaryAsync(c => c.Id, cancellationToken);
 
-    public async Task<IReadOnlySet<EventKey>> GetExistingEventKeysAsync(IReadOnlyCollection<string> equipmentIds, CancellationToken cancellationToken)
+    public async Task<IReadOnlySet<EventKey>> GetExistingEventKeys(IReadOnlyCollection<string> equipmentIds, CancellationToken cancellationToken)
     {
         var keys = await _dbContext.EquipmentEvents
             .AsNoTracking()
@@ -24,7 +24,7 @@ public sealed class TripProcessingStore(AppDbContext dbContext) : ITripProcessin
         return new HashSet<EventKey>(keys);
     }
 
-    public async Task<PersistenceWriteResult> AddEquipmentEventsAsync(IEnumerable<EquipmentEvent> events, CancellationToken cancellationToken)
+    public async Task<PersistenceWriteResult> AddEquipmentEvents(IEnumerable<EquipmentEvent> events, CancellationToken cancellationToken)
     {
         var pendingEvents = events.ToList();
         if (pendingEvents.Count == 0)
@@ -97,7 +97,7 @@ public sealed class TripProcessingStore(AppDbContext dbContext) : ITripProcessin
         return new PersistenceWriteResult(persistedCount, warnings);
     }
 
-    public Task<List<EquipmentEvent>> GetEventsForEquipmentAsync(IReadOnlyCollection<string> equipmentIds, CancellationToken cancellationToken) =>
+    public Task<List<EquipmentEvent>> GetEventsForEquipment(IReadOnlyCollection<string> equipmentIds, CancellationToken cancellationToken) =>
         _dbContext.EquipmentEvents
             .AsNoTracking()
             .Where(e => equipmentIds.Contains(e.EquipmentId))
@@ -105,7 +105,7 @@ public sealed class TripProcessingStore(AppDbContext dbContext) : ITripProcessin
             .ThenBy(e => e.EventUtcTime)
             .ToListAsync(cancellationToken);
 
-    public async Task<IReadOnlySet<TripKey>> GetExistingTripKeysAsync(IReadOnlyCollection<string> equipmentIds, CancellationToken cancellationToken)
+    public async Task<IReadOnlySet<TripKey>> GetExistingTripKeys(IReadOnlyCollection<string> equipmentIds, CancellationToken cancellationToken)
     {
         var keys = await _dbContext.Trips
             .AsNoTracking()
@@ -116,7 +116,7 @@ public sealed class TripProcessingStore(AppDbContext dbContext) : ITripProcessin
         return new HashSet<TripKey>(keys);
     }
 
-    public async Task<PersistenceWriteResult> AddTripsAsync(IEnumerable<Trip> trips, IEnumerable<TripEvent> tripEvents, CancellationToken cancellationToken)
+    public async Task<PersistenceWriteResult> AddTrips(IEnumerable<Trip> trips, IEnumerable<TripEvent> tripEvents, CancellationToken cancellationToken)
     {
         var pendingTrips = trips.ToList();
         var pendingTripEvents = tripEvents.ToList();

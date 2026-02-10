@@ -6,15 +6,15 @@ namespace RailcarTrips.BddTests.Steps;
 
 public sealed class InMemoryTripStore : ITripProcessingStore, ITripReadStore
 {
-    public Dictionary<int, City> Cities { get; } = new();
-    public List<EquipmentEvent> EquipmentEvents { get; } = new();
-    public List<Trip> Trips { get; } = new();
-    public List<TripEvent> TripEvents { get; } = new();
+    public Dictionary<int, City> Cities { get; } = [];
+    public List<EquipmentEvent> EquipmentEvents { get; } = [];
+    public List<Trip> Trips { get; } = [];
+    public List<TripEvent> TripEvents { get; } = [];
 
-    public Task<Dictionary<int, City>> GetCityLookupAsync(CancellationToken cancellationToken) =>
+    public Task<Dictionary<int, City>> GetCityLookup(CancellationToken cancellationToken) =>
         Task.FromResult(Cities.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
 
-    public Task<IReadOnlySet<EventKey>> GetExistingEventKeysAsync(IReadOnlyCollection<string> equipmentIds, CancellationToken cancellationToken)
+    public Task<IReadOnlySet<EventKey>> GetExistingEventKeys(IReadOnlyCollection<string> equipmentIds, CancellationToken cancellationToken)
     {
         var keys = EquipmentEvents
             .Where(e => equipmentIds.Contains(e.EquipmentId))
@@ -23,14 +23,14 @@ public sealed class InMemoryTripStore : ITripProcessingStore, ITripReadStore
         return Task.FromResult<IReadOnlySet<EventKey>>(new HashSet<EventKey>(keys));
     }
 
-    public Task<PersistenceWriteResult> AddEquipmentEventsAsync(IEnumerable<EquipmentEvent> events, CancellationToken cancellationToken)
+    public Task<PersistenceWriteResult> AddEquipmentEvents(IEnumerable<EquipmentEvent> events, CancellationToken cancellationToken)
     {
         var list = events.ToList();
         EquipmentEvents.AddRange(list);
         return Task.FromResult(new PersistenceWriteResult(list.Count, []));
     }
 
-    public Task<List<EquipmentEvent>> GetEventsForEquipmentAsync(IReadOnlyCollection<string> equipmentIds, CancellationToken cancellationToken)
+    public Task<List<EquipmentEvent>> GetEventsForEquipment(IReadOnlyCollection<string> equipmentIds, CancellationToken cancellationToken)
     {
         var events = EquipmentEvents
             .Where(e => equipmentIds.Contains(e.EquipmentId))
@@ -40,7 +40,7 @@ public sealed class InMemoryTripStore : ITripProcessingStore, ITripReadStore
         return Task.FromResult(events);
     }
 
-    public Task<IReadOnlySet<TripKey>> GetExistingTripKeysAsync(IReadOnlyCollection<string> equipmentIds, CancellationToken cancellationToken)
+    public Task<IReadOnlySet<TripKey>> GetExistingTripKeys(IReadOnlyCollection<string> equipmentIds, CancellationToken cancellationToken)
     {
         var keys = Trips
             .Where(t => equipmentIds.Contains(t.EquipmentId))
@@ -49,7 +49,7 @@ public sealed class InMemoryTripStore : ITripProcessingStore, ITripReadStore
         return Task.FromResult<IReadOnlySet<TripKey>>(new HashSet<TripKey>(keys));
     }
 
-    public Task<PersistenceWriteResult> AddTripsAsync(IEnumerable<Trip> trips, IEnumerable<TripEvent> tripEvents, CancellationToken cancellationToken)
+    public Task<PersistenceWriteResult> AddTrips(IEnumerable<Trip> trips, IEnumerable<TripEvent> tripEvents, CancellationToken cancellationToken)
     {
         var tripList = trips.ToList();
         Trips.AddRange(tripList);
@@ -57,7 +57,7 @@ public sealed class InMemoryTripStore : ITripProcessingStore, ITripReadStore
         return Task.FromResult(new PersistenceWriteResult(tripList.Count, []));
     }
 
-    public Task<List<TripDto>> GetTripsAsync(CancellationToken cancellationToken)
+    public Task<List<TripDto>> GetTrips(CancellationToken cancellationToken)
     {
         var trips = Trips
             .OrderByDescending(t => t.StartUtc)
@@ -75,7 +75,7 @@ public sealed class InMemoryTripStore : ITripProcessingStore, ITripReadStore
         return Task.FromResult(trips);
     }
 
-    public Task<List<TripEventDto>> GetTripEventsAsync(int tripId, CancellationToken cancellationToken)
+    public Task<List<TripEventDto>> GetTripEvents(int tripId, CancellationToken cancellationToken)
     {
         var events = TripEvents
             .Where(te => te.TripId == tripId)

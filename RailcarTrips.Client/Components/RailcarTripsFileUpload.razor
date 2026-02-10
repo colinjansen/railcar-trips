@@ -1,0 +1,37 @@
+<InputFile OnChange="OnInputFileChange" />
+<button class="btn btn-primary"
+        @onclick="OnProcessClicked"
+        disabled="@(!CanProcess || IsProcessing)">
+    @if (IsProcessing)
+    {
+        <span>Processing...</span>
+    }
+    else
+    {
+        <span>Process</span>
+    }
+</button>
+
+@code {
+    [Parameter]
+    public bool CanProcess { get; set; }
+
+    [Parameter]
+    public bool IsProcessing { get; set; }
+
+    [Parameter]
+    public EventCallback<InputFileChangeEventArgs> FileSelected { get; set; }
+
+    [Parameter]
+    public EventCallback ProcessRequested { get; set; }
+
+    private Task OnInputFileChange(InputFileChangeEventArgs args)
+    {
+        return FileSelected.InvokeAsync(args);
+    }
+
+    private Task OnProcessClicked()
+    {
+        return ProcessRequested.InvokeAsync();
+    }
+}

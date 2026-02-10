@@ -7,4 +7,5 @@ public sealed class ProcessResultDto
     public int TripsCreated { get; set; }
     public int WarningCount { get; set; }
     public int ErrorCount { get; set; }
+    public List<string> Warnings { get; set; } = new();
 }
