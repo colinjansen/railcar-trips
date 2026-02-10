@@ -14,19 +14,20 @@ public sealed class InMemoryTripStore : ITripProcessingStore, ITripReadStore
     public Task<Dictionary<int, City>> GetCityLookupAsync(CancellationToken cancellationToken) =>
         Task.FromResult(Cities.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
 
-    public Task<HashSet<EventKey>> GetExistingEventKeysAsync(HashSet<string> equipmentIds, CancellationToken cancellationToken)
+    public Task<IReadOnlySet<EventKey>> GetExistingEventKeysAsync(IReadOnlyCollection<string> equipmentIds, CancellationToken cancellationToken)
     {
         var keys = EquipmentEvents
             .Where(e => equipmentIds.Contains(e.EquipmentId))
             .Select(e => e.ToKey())
             .ToList();
-        return Task.FromResult(new HashSet<EventKey>(keys));
+        return Task.FromResult<IReadOnlySet<EventKey>>(new HashSet<EventKey>(keys));
     }
 
-    public Task AddEquipmentEventsAsync(IEnumerable<EquipmentEvent> events, CancellationToken cancellationToken)
+    public Task<PersistenceWriteResult> AddEquipmentEventsAsync(IEnumerable<EquipmentEvent> events, CancellationToken cancellationToken)
     {
-        EquipmentEvents.AddRange(events);
-        return Task.CompletedTask;
+        var list = events.ToList();
+        EquipmentEvents.AddRange(list);
+        return Task.FromResult(new PersistenceWriteResult(list.Count, []));
     }
 
     public Task<List<EquipmentEvent>> GetEventsForEquipmentAsync(IReadOnlyCollection<string> equipmentIds, CancellationToken cancellationToken)
@@ -39,20 +40,21 @@ public sealed class InMemoryTripStore : ITripProcessingStore, ITripReadStore
         return Task.FromResult(events);
     }
 
-    public Task<HashSet<TripKey>> GetExistingTripKeysAsync(HashSet<string> equipmentIds, CancellationToken cancellationToken)
+    public Task<IReadOnlySet<TripKey>> GetExistingTripKeysAsync(IReadOnlyCollection<string> equipmentIds, CancellationToken cancellationToken)
     {
         var keys = Trips
             .Where(t => equipmentIds.Contains(t.EquipmentId))
             .Select(t => t.ToKey())
             .ToList();
-        return Task.FromResult(new HashSet<TripKey>(keys));
+        return Task.FromResult<IReadOnlySet<TripKey>>(new HashSet<TripKey>(keys));
     }
 
-    public Task AddTripsAsync(IEnumerable<Trip> trips, IEnumerable<TripEvent> tripEvents, CancellationToken cancellationToken)
+    public Task<PersistenceWriteResult> AddTripsAsync(IEnumerable<Trip> trips, IEnumerable<TripEvent> tripEvents, CancellationToken cancellationToken)
     {
-        Trips.AddRange(trips);
+        var tripList = trips.ToList();
+        Trips.AddRange(tripList);
         TripEvents.AddRange(tripEvents);
-        return Task.CompletedTask;
+        return Task.FromResult(new PersistenceWriteResult(tripList.Count, []));
     }
 
     public Task<List<TripDto>> GetTripsAsync(CancellationToken cancellationToken)

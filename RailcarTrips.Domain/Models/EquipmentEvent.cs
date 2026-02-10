@@ -20,5 +20,5 @@ public sealed class EquipmentEvent
     public int CityId { get; set; }
     public City? City { get; set; }
 
-    public EventKey ToKey() => new(EquipmentId, EventUtcTime, EventCode, CityId);
+    public EventKey ToKey() => new(EquipmentId, DateTime.SpecifyKind(EventUtcTime, DateTimeKind.Utc), EventCode, CityId);
 }

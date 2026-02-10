@@ -7,7 +7,7 @@ public static class TripProcessingRules
     public static EventBuildResult BuildEvents(
         IEnumerable<ImportedEventRow> rows,
         IReadOnlyDictionary<int, City> cityLookup,
-        Func<string, TimeZoneInfo?> resolveTimeZone)
+        IEventTimeConverter eventTimeConverter)
     {
         var eventsToInsert = new List<EquipmentEvent>();
         var equipmentIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -24,8 +24,8 @@ public static class TripProcessingRules
                 continue;
             }
 
-            var timeZone = resolveTimeZone(city.TimeZoneId);
-            if (timeZone is null)
+            var conversion = eventTimeConverter.Convert(row.EventLocalTime, city.TimeZoneId);
+            if (conversion is null)
             {
                 issues.Add(new ProcessingIssue(
                     "TimeZoneNotFound",
@@ -34,24 +34,20 @@ public static class TripProcessingRules
                 continue;
             }
 
-            var localTime = DateTime.SpecifyKind(row.EventLocalTime, DateTimeKind.Unspecified);
-            if (timeZone.IsInvalidTime(localTime))
+            if (conversion.InvalidLocalTimeAdjusted)
             {
-                var adjusted = localTime.AddHours(1);
                 issues.Add(new ProcessingIssue(
                     "InvalidLocalTimeAdjusted",
-                    $"Invalid local time {localTime} in {city.TimeZoneId}. Adjusted to {adjusted}.",
+                    $"Invalid local time {row.EventLocalTime} in {city.TimeZoneId}. Adjusted to {conversion.NormalizedLocalTime}.",
                     ProcessingIssueSeverity.Warning));
-                localTime = adjusted;
             }
 
-            var utcTime = TimeZoneInfo.ConvertTimeToUtc(localTime, timeZone);
             var equipmentEvent = new EquipmentEvent
             {
                 EquipmentId = row.EquipmentId,
                 EventCode = row.EventCode,
-                EventLocalTime = localTime,
-                EventUtcTime = utcTime,
+                EventLocalTime = conversion.NormalizedLocalTime,
+                EventUtcTime = conversion.EventUtcTime,
                 CityId = city.Id
             };
 
@@ -64,7 +60,7 @@ public static class TripProcessingRules
 
     public static EventPersistenceSelection SelectEventsToPersist(
         IEnumerable<EquipmentEvent> candidateEvents,
-        ISet<EventKey> existingKeys)
+        IReadOnlySet<EventKey> existingKeys)
     {
         var newEvents = new List<EquipmentEvent>();
         var warnings = new List<TripBuildWarning>();
@@ -92,7 +88,7 @@ public static class TripProcessingRules
 
     public static TripPersistenceSelection SelectTripsToPersist(
         IEnumerable<EquipmentEvent> eventsForTripBuild,
-        ISet<TripKey> existingTripKeys)
+        IReadOnlySet<TripKey> existingTripKeys)
     {
         var buildResult = Trip.BuildTrips(eventsForTripBuild);
         var newTrips = new List<Trip>();

@@ -8,12 +8,12 @@ namespace RailcarTrips.Application.UseCases;
 
 public sealed class ProcessTripsUseCase(
     ITripProcessingStore store,
-    ITimeZoneResolver timeZoneResolver,
+    IEventTimeConverter eventTimeConverter,
     ICsvReader csvReader,
     ILogger<ProcessTripsUseCase> logger)
 {
     private readonly ITripProcessingStore _store = store;
-    private readonly ITimeZoneResolver _timeZoneResolver = timeZoneResolver;
+    private readonly IEventTimeConverter _eventTimeConverter = eventTimeConverter;
     private readonly ICsvReader _csvReader = csvReader;
     private readonly ILogger<ProcessTripsUseCase> _logger = logger;
 
@@ -42,7 +42,7 @@ public sealed class ProcessTripsUseCase(
         }
 
         var cityLookup = await _store.GetCityLookupAsync(cancellationToken);
-        var buildEventsResult = TripProcessingRules.BuildEvents(rows, cityLookup, _timeZoneResolver.Resolve);
+        var buildEventsResult = TripProcessingRules.BuildEvents(rows, cityLookup, _eventTimeConverter);
         LogAndCountIssues(buildEventsResult.Issues, result);
         var eventsToInsert = buildEventsResult.Events;
         var equipmentIds = buildEventsResult.EquipmentIds.ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -56,11 +56,12 @@ public sealed class ProcessTripsUseCase(
         var existingEventKeys = await _store.GetExistingEventKeysAsync(equipmentIds, cancellationToken);
         var eventSelection = TripProcessingRules.SelectEventsToPersist(eventsToInsert, existingEventKeys);
         LogAndCountWarnings(eventSelection.Warnings, result);
-        result.StoredEvents += eventSelection.Events.Count;
 
         if (eventSelection.Events.Count > 0)
         {
-            await _store.AddEquipmentEventsAsync(eventSelection.Events, cancellationToken);
+            var writeResult = await _store.AddEquipmentEventsAsync(eventSelection.Events, cancellationToken);
+            result.StoredEvents += writeResult.PersistedCount;
+            LogAndCountWarnings(writeResult.Warnings, result);
         }
 
         var eventsForTrips = await _store.GetEventsForEquipmentAsync(equipmentIds, cancellationToken);
@@ -70,8 +71,9 @@ public sealed class ProcessTripsUseCase(
 
         if (tripSelection.Trips.Count > 0)
         {
-            await _store.AddTripsAsync(tripSelection.Trips, tripSelection.TripEvents, cancellationToken);
-            result.TripsCreated = tripSelection.Trips.Count;
+            var writeResult = await _store.AddTripsAsync(tripSelection.Trips, tripSelection.TripEvents, cancellationToken);
+            result.TripsCreated = writeResult.PersistedCount;
+            LogAndCountWarnings(writeResult.Warnings, result);
         }
 
         _logger.LogInformation("Processed {Parsed} events, stored {Stored} new events, created {Trips} trips.",

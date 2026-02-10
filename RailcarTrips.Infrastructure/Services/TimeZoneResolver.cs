@@ -1,14 +1,14 @@
 using Microsoft.Extensions.Logging;
-using RailcarTrips.Application.Abstractions;
+using RailcarTrips.Domain.Services;
 using TimeZoneConverter;
 
 namespace RailcarTrips.Infrastructure.Services;
 
-public sealed class TimeZoneResolver(ILogger<TimeZoneResolver> logger) : ITimeZoneResolver
+public sealed class TimeZoneResolver(ILogger<TimeZoneResolver> logger) : IEventTimeConverter
 {
     private readonly ILogger<TimeZoneResolver> _logger = logger;
 
-    public TimeZoneInfo? Resolve(string timeZoneId)
+    public EventTimeConversionResult? Convert(DateTime eventLocalTime, string timeZoneId)
     {
         if (string.IsNullOrWhiteSpace(timeZoneId))
         {
@@ -17,7 +17,18 @@ public sealed class TimeZoneResolver(ILogger<TimeZoneResolver> logger) : ITimeZo
 
         try
         {
-            return TZConvert.GetTimeZoneInfo(timeZoneId);
+            var timeZone = TZConvert.GetTimeZoneInfo(timeZoneId);
+            var localTime = DateTime.SpecifyKind(eventLocalTime, DateTimeKind.Unspecified);
+            var adjusted = false;
+
+            if (timeZone.IsInvalidTime(localTime))
+            {
+                localTime = localTime.AddHours(1);
+                adjusted = true;
+            }
+
+            var utcTime = TimeZoneInfo.ConvertTimeToUtc(localTime, timeZone);
+            return new EventTimeConversionResult(localTime, utcTime, adjusted);
         }
         catch (TimeZoneNotFoundException)
         {

@@ -37,7 +37,10 @@ public sealed class Trip
         return tripEvent;
     }
 
-    public TripKey ToKey() => new(EquipmentId, StartUtc, EndUtc);
+    public TripKey ToKey() => new(
+        EquipmentId,
+        DateTime.SpecifyKind(StartUtc, DateTimeKind.Utc),
+        DateTime.SpecifyKind(EndUtc, DateTimeKind.Utc));
 
     public static TripBuildResult BuildTrips(IEnumerable<EquipmentEvent> events)
     {

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using RailcarTrips.Application.Abstractions;
 using RailcarTrips.Application.UseCases;
+using RailcarTrips.Domain.Services;
 using RailcarTrips.Infrastructure.Data;
 using RailcarTrips.Infrastructure.Services;
 using RailcarTrips.Infrastructure.Stores;
@@ -17,7 +18,7 @@ builder.Services.AddScoped<ITripReadStore, TripReadStore>();
 builder.Services.AddScoped<ICsvReader, CsvReader>();
 builder.Services.AddScoped<ProcessTripsUseCase>();
 builder.Services.AddScoped<TripQueryService>();
-builder.Services.AddSingleton<ITimeZoneResolver, TimeZoneResolver>();
+builder.Services.AddSingleton<IEventTimeConverter, TimeZoneResolver>();
 
 var app = builder.Build();
 
